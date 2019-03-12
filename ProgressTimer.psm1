@@ -101,6 +101,16 @@ class ProgressTimer
         return $this.Counter
     }
 
+    [void]Reset()
+    {
+        $this.Buffer.Queue.Clear()
+        $this.Counter = 0
+        if ($this.Stopwatch.IsRunning)
+        {
+            $this.Stopwatch.Restart()
+        }
+    }
+
     [double]SecondsRemaining()
     {
         if ($this.Buffer.Queue.Count -eq 0)
@@ -148,28 +158,30 @@ function New-ProgressTimer
     .PARAMETER UseNMostRecent
     Used for calculating the SecondsRemaining value. If specified, the average time per iteration will only be calculated using the last N iterations.
     Higher values produce more stable readings, at the expense of accuracy
+
+    .PARAMETER Start
+    Returns the ProgressTimer object in an already started state
     
     .EXAMPLE
     $Timer = New-ProgressTimer -TotalCount 100 -UseNMostRecent 10
     $Timer.Start()
-    ForEach ($task in $MyBigJob)
+    ForEach ($n in 1..100)
     {
         $Progress = @{
             Activity = "Running big job. ETC: $($Timer.EstimatedTimeOfCompletion())"
-            Status = $task
+            Status = $n
             PercentComplete = $Timer.PercentComplete()
             SecondsRemaining = $Timer.SecondsRemaining()
             ID = 1
         }
         Write-Progress @Progress
         
-        # Do Work
-        # ...
-        # ...
+        # Do Work ...
+        Start-Sleep -Milliseconds (Get-Random -Minimum 500 -Maximum 3000)
 
         [int]$JobsComplete = $Timer.Lap()
     }
-    Write-Progress -ID 1 -Complete
+    Write-Progress -ID 1 -Complete -Activity "Done"
     
     .NOTES
     None
@@ -183,10 +195,21 @@ function New-ProgressTimer
 
         [Parameter(Mandatory = $false)]
         [int]
-        $UseNMostRecent = $TotalCount
+        $UseNMostRecent = $TotalCount,
+
+        [switch]
+        $Start
     )
 
-    return [ProgressTimer]::new($TotalCount, $UseNMostRecent)
+    End
+    {
+        $ReturnTimer = [ProgressTimer]::new($TotalCount, $UseNMostRecent)
+        if ($start)
+        {
+            $ReturnTimer.Start()
+        }
+        return $ReturnTimer
+    }
 }
 
 Export-ModuleMember -Function @("New-ProgressTimer")
