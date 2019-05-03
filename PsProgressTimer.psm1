@@ -1,6 +1,6 @@
 using namespace System.Collections.Generic;
 
-class CircularBuffer # : IEnumerable[double]
+class CircularBuffer
 {
     hidden [Queue[double]]$Queue
     hidden [int]$Size
@@ -56,7 +56,6 @@ class CircularBuffer # : IEnumerable[double]
     {
         return $this.Queue.GetEnumerator()
     }
-
 }
 
 class ProgressTimer
@@ -65,22 +64,26 @@ class ProgressTimer
     hidden [System.Diagnostics.Stopwatch]$Stopwatch
     hidden [int]$TotalCount
     hidden [int]$UseNMostRecent
+    hidden [bool]$IntraLapTime
     [int]$Counter
 
     ProgressTimer([int]$Count)
     {
-        $this.Buffer = [CircularBuffer]::new($Count)
-        $this.Stopwatch = [System.Diagnostics.Stopwatch]::new()
-        $this.TotalCount = $Count
-        $this.Counter = 0
+        $this._init($Count, $Count)
     }
 
     ProgressTimer([int]$Count, [int]$UseNMostRecent)
     {
-        $this.Buffer = [CircularBuffer]::new($UseNMostRecent)
+        $this._init($Count, $UseNMostRecent)
+    }
+
+    hidden [void] _init([int]$c, [int]$u)
+    {
+        $this.Buffer = [CircularBuffer]::new($u)
         $this.Stopwatch = [System.Diagnostics.Stopwatch]::new()
-        $this.TotalCount = $Count
+        $this.TotalCount = $c
         $this.Counter = 0
+        $this.IntraLapTime = 0
     }
 
     [void]Start()
@@ -95,10 +98,22 @@ class ProgressTimer
         {
             throw [System.InvalidOperationException]::new("Timer has not yet been started")
         }
-        $this.Buffer.Add($this.Stopwatch.Elapsed.TotalSeconds)
+        $this.Buffer.Add($this.Stopwatch.Elapsed.TotalSeconds + $this.IntraLapTime)
+        $this.IntraLapTime = 0
         $this.Stopwatch.Restart()
         $this.Counter++
         return $this.Counter
+    }
+
+    # Updates the duration of the last entry in the buffer without performing a lap.
+    [void]UpdateDuration()
+    {
+        if (!$this.Stopwatch.IsRunning)
+        {
+            throw [System.InvalidOperationException]::new("Timer has not yet been started")
+        }
+        $this.IntraLapTime += $this.Stopwatch.Elapsed.TotalSeconds
+        $this.Stopwatch.Restart()
     }
 
     [void]Reset()
@@ -115,12 +130,13 @@ class ProgressTimer
     {
         if ($this.Buffer.Queue.Count -eq 0)
         {
-            return -1
+            return - 1
         }
         $Average = [Linq.Enumerable]::Average($this.Buffer.Queue)
         $Remaining = $this.TotalCount - $this.Counter
-        return $Average * $Remaining
+        return ($Average * $Remaining) - $this.IntraLapTime
     }
+
     [double]PercentComplete()
     {
         if ($this.Buffer.Queue.Count -eq 0)
@@ -139,7 +155,7 @@ class ProgressTimer
         return [datetime]::Now.AddSeconds($this.SecondsRemaining())
     }
 
-}
+    }
 
 function New-ProgressTimer
 {
@@ -204,7 +220,7 @@ function New-ProgressTimer
     End
     {
         $ReturnTimer = [ProgressTimer]::new($TotalCount, $UseNMostRecent)
-        if ($start)
+        if ($Start)
         {
             $ReturnTimer.Start()
         }
