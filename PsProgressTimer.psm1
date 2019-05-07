@@ -66,6 +66,10 @@ class ProgressTimer
     hidden [int]$UseNMostRecent
     hidden [bool]$IntraLapTime
     [int]$Counter
+    [string]$ActivityText
+    [System.Nullable[int]]$Id
+    [System.Nullable[int]]$ParentId
+    [scriptblock]$Status
 
     ProgressTimer([int]$Count)
     {
@@ -130,7 +134,7 @@ class ProgressTimer
     {
         if ($this.Buffer.Queue.Count -eq 0)
         {
-            return - 1
+            return -1
         }
         $Average = [Linq.Enumerable]::Average($this.Buffer.Queue)
         $Remaining = $this.TotalCount - $this.Counter
@@ -145,6 +149,7 @@ class ProgressTimer
         }
         return $this.Counter / $this.TotalCount * 100
     }
+    
     [datetime]EstimatedTimeOfCompletion()
     {
         if ($this.Buffer.Queue.Count -eq 0)
@@ -155,7 +160,58 @@ class ProgressTimer
         return [datetime]::Now.AddSeconds($this.SecondsRemaining())
     }
 
+    [string]GetEtcString()
+    {
+        $EndDate = $this.EstimatedTimeOfCompletion()
+        if ($EndDate -eq [datetime]::MaxValue)
+        {
+            return "--:--:--"
+        }
+        return $EndDate.ToString()
     }
+
+    [hashtable]GetSplat()
+    {
+        $SplatHt = [hashtable]::new()
+        # Default Properties
+        $SplatHt.Add("SecondsRemaining", $this.SecondsRemaining())
+        $SplatHt.Add("PercentComplete", $this.PercentComplete())
+        
+        # Additional properties
+        if (![string]::IsNullOrEmpty($this.ActivityText))
+        {
+            $SplatHt.Add("Activity", $this.BuildActivityText($this.ActivityText))
+        }
+
+        if ($this.Id.HasValue)
+        {
+            $SplatHt.Add("Id", $this.Id.GetValueOrDefault())
+        }
+
+        if ($this.ParentId.HasValue)
+        {
+            $SplatHt.Add("ParentId", $this.ParentId.GetValueOrDefault())
+        }
+
+        if ($this.Status -ne $null)
+        {
+            $SplatHt.Add("Status", "($($this.Counter)/$($this.TotalCount))" + $this.Status.GetNewClosure().InvokeReturnAsIs())
+
+        }
+
+        return $SplatHt
+    }
+
+    hidden [string]BuildActivityText([string]$LeaderText)
+    {
+        $sb = [System.Text.StringBuilder]::new()
+        $sb.Append($LeaderText + (" " * [int][bool]$LeaderText)
+          ).AppendFormat("ETC: {0}", $this.GetEtcString())
+     
+        return $sb.ToString()
+    }
+
+}
 
 function New-ProgressTimer
 {
@@ -214,12 +270,32 @@ function New-ProgressTimer
         $UseNMostRecent = $TotalCount,
 
         [switch]
-        $Start
+        $Start,
+
+        [Parameter(Mandatory = $false)]
+        [int]
+        $Id = 1,
+
+        [Parameter(Mandatory = $false)]
+        [int]
+        $ParentId = 0,
+
+        [Parameter(Mandatory = $false)]
+        [string]
+        $ActivityText = "Performing work",
+
+        [Parameter(Mandatory = $false)]
+        [scriptblock]
+        $StatusScript = {return "Running..."}
     )
 
     End
     {
         $ReturnTimer = [ProgressTimer]::new($TotalCount, $UseNMostRecent)
+        $ReturnTimer.Id = $Id
+        $ReturnTimer.ParentId = $ParentId
+        $ReturnTimer.ActivityText = $ActivityText
+        $ReturnTimer.Status = $StatusScript
         if ($Start)
         {
             $ReturnTimer.Start()
