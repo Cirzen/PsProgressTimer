@@ -58,12 +58,6 @@ class CircularBuffer
     }
 }
 
-class ProgressData
-{
-    [double]$SecondsRemaining
-    [double]$PercentComplete
-}
-
 class ProgressTimer
 {
     hidden [CircularBuffer]$Buffer
