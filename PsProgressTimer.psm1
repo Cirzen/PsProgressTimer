@@ -61,6 +61,7 @@ class CircularBuffer
 class ProgressTimer
 {
     hidden [CircularBuffer]$Buffer
+    hidden [double]$BufferAverage
     hidden [System.Diagnostics.Stopwatch]$Stopwatch
     hidden [int]$TotalCount
     hidden [int]$UseNMostRecent
@@ -98,18 +99,39 @@ class ProgressTimer
     # Marks the iteration and uses the time taken since the last to calculate the average
     [int]Lap()
     {
+        return $this.Lap(1)
+    }
+    
+    [int]Lap([int]$Count)
+    {
+        if ($Count -lt 0)
+        {
+            throw [System.ArgumentException]::new("Value cannot be less than zero", "Count")
+        }
+
+        if ($count -eq 0)
+        {
+            $this.UpdateDuration()
+            return $this.Counter
+        }
+
         if (!$this.Stopwatch.IsRunning)
         {
             throw [System.InvalidOperationException]::new("Timer has not yet been started")
         }
-        $this.Buffer.Add($this.Stopwatch.Elapsed.TotalSeconds + $this.IntraLapTime)
+        for ($i = 0; $i++ -lt $Count; )
+        {
+            $this.Buffer.Add(($this.Stopwatch.Elapsed.TotalSeconds + $this.IntraLapTime) / $Count)
+            $this.Counter++
+        }
+        $this.BufferAverage = [Linq.Enumerable]::Average($this.Buffer.Queue)
         $this.IntraLapTime = 0
         $this.Stopwatch.Restart()
-        $this.Counter++
         return $this.Counter
     }
 
-    # Updates the duration of the last entry in the buffer without performing a lap.
+
+    # Updates the duration of the last entry in the buffer without performing a counter increment.
     [void]UpdateDuration()
     {
         if (!$this.Stopwatch.IsRunning)
@@ -120,6 +142,7 @@ class ProgressTimer
         $this.Stopwatch.Restart()
     }
 
+    # Resets the timer to initial state. Allows the object to be reused
     [void]Reset()
     {
         $this.Buffer.Queue.Clear()
@@ -130,44 +153,52 @@ class ProgressTimer
         }
     }
 
+    # Estimates the seconds remaining from the average rate of the n most recent lap times
     [double]SecondsRemaining()
     {
         if ($this.Buffer.Queue.Count -eq 0)
         {
-            return -1
+            return (-1)
         }
-        $Average = [Linq.Enumerable]::Average($this.Buffer.Queue)
         $Remaining = $this.TotalCount - $this.Counter
-        return ($Average * $Remaining) - $this.IntraLapTime
+        return ($this.BufferAverage * $Remaining) - $this.IntraLapTime
     }
 
+    # Calculates the percent complete
     [double]PercentComplete()
     {
         if ($this.Buffer.Queue.Count -eq 0)
         {
-            return -1
+            return (-1)
         }
         return $this.Counter / $this.TotalCount * 100
     }
     
+    # Gets the estimated time of completion based on the seconds remaining.
     [datetime]EstimatedTimeOfCompletion()
     {
         if ($this.Buffer.Queue.Count -eq 0)
         {
             return [datetime]::MaxValue
         }
-        # Should SecondsRemaining be cached if the LINQ operation is potentially expensive?
         return [datetime]::Now.AddSeconds($this.SecondsRemaining())
     }
 
+    # Gets the estimated time of compeletion as a string
     [string]GetEtcString()
+    {
+        return $this.GetEtcString($null, "--:--:--")
+    }
+
+    # Gets the estimated time of compeletion as a string using the specified format and default string if the ETC is not defined
+    [string]GetEtcString([string]$Format, [string]$DefaultValue)
     {
         $EndDate = $this.EstimatedTimeOfCompletion()
         if ($EndDate -eq [datetime]::MaxValue)
         {
-            return "--:--:--"
+            return $DefaultValue
         }
-        return $EndDate.ToString()
+        return $EndDate.ToString($Format)
     }
 
     [hashtable]GetSplat()
@@ -202,11 +233,17 @@ class ProgressTimer
         return $SplatHt
     }
 
+    [void]WriteProgress()
+    {
+        $ProgressSplat = $this.GetSplat()
+        Write-Progress @ProgressSplat
+    }
+
     hidden [string]BuildActivityText([string]$LeaderText)
     {
         $sb = [System.Text.StringBuilder]::new()
         $sb.Append($LeaderText + (" " * [int][bool]$LeaderText)
-          ).AppendFormat("ETC: {0}", $this.GetEtcString())
+        ).AppendFormat("ETC: {0}", $this.GetEtcString())
      
         return $sb.ToString()
     }
@@ -232,7 +269,33 @@ function New-ProgressTimer
     Higher values produce more stable readings, at the expense of accuracy
 
     .PARAMETER Start
-    Returns the ProgressTimer object in an already started state
+    Returns the ProgressTimer object in an already started state.
+    
+    .PARAMETER Id
+    The value to assign to the ID parameter of Write-Progress.
+
+    .PARAMETER ParentId
+    The value to assign to the ParentID parameter of Write-Progress.
+
+    .PARAMETER ActivityText
+    A string to use in the "Activity" header of the progress object. This will be suffixed with the Estimated Time of Completion.
+
+    .PARAMETER StatusScript
+    A scriptblock used to calculate the Status property of the progress object. A closure is generated from the scriptblock, so loop variables can be referenced.
+    The value will be prefixed with a (x/y) counter showing the numerical progress
+    
+    
+    .EXAMPLE
+    $AllServers = Get-MyServers
+    $Timer = New-ProgressTimer -TotalCount $AllServers.Count -ActivityText "Checking Servers..." -StatusScript {"Pinging $($Server.IpAddress)"} -Start
+    ForEach ($Server in $AllServers)
+    {
+        Test-Connection $Server.IpAddress
+        $Timer.Lap()
+        $Timer.WriteProgress()
+    }
+
+    # This example shows the ProgressTimer running in full auto mode. The StatusScript property shows how you can use the loop variable
     
     .EXAMPLE
     $Timer = New-ProgressTimer -TotalCount 100 -UseNMostRecent 10
@@ -240,7 +303,7 @@ function New-ProgressTimer
     ForEach ($n in 1..100)
     {
         $Progress = @{
-            Activity = "Running big job. ETC: $($Timer.EstimatedTimeOfCompletion())"
+            Activity = "Running big job."
             Status = $n
             PercentComplete = $Timer.PercentComplete()
             SecondsRemaining = $Timer.SecondsRemaining()
@@ -254,6 +317,8 @@ function New-ProgressTimer
         [int]$JobsComplete = $Timer.Lap()
     }
     Write-Progress -ID 1 -Complete -Activity "Done"
+
+    # This example shows how to maintain control of several of the Write-Progress parameters while letting the timer object handle the PercentComplete and SecondsRemaining calculations
     
     .NOTES
     None
@@ -286,7 +351,7 @@ function New-ProgressTimer
 
         [Parameter(Mandatory = $false)]
         [scriptblock]
-        $StatusScript = {return "Running..."}
+        $StatusScript = { return "Running..." }
     )
 
     End
