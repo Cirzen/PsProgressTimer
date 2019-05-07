@@ -158,7 +158,7 @@ class ProgressTimer
     {
         if ($this.Buffer.Queue.Count -eq 0)
         {
-            return - 1
+            return (-1)
         }
         $Remaining = $this.TotalCount - $this.Counter
         return ($this.BufferAverage * $Remaining) - $this.IntraLapTime
