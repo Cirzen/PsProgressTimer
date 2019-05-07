@@ -121,7 +121,6 @@ class ProgressTimer
         }
         for ($i = 0; $i++ -lt $Count; )
         {
-
             $this.Buffer.Add(($this.Stopwatch.Elapsed.TotalSeconds + $this.IntraLapTime) / $Count)
             $this.Counter++
         }
@@ -170,7 +169,7 @@ class ProgressTimer
     {
         if ($this.Buffer.Queue.Count -eq 0)
         {
-            return - 1
+            return (-1)
         }
         return $this.Counter / $this.TotalCount * 100
     }
