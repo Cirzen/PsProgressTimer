@@ -201,6 +201,7 @@ class ProgressTimer
         return $EndDate.ToString($Format)
     }
 
+    # Returns a hashtable of the current object state to be used as a splatted parameter for Write-Progress
     [hashtable]GetSplat()
     {
         $SplatHt = [hashtable]::new()
@@ -233,6 +234,7 @@ class ProgressTimer
         return $SplatHt
     }
 
+    # Writes to the Progress stream with the current object state
     [void]WriteProgress()
     {
         $ProgressSplat = $this.GetSplat()
