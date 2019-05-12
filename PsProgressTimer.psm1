@@ -91,6 +91,7 @@ class ProgressTimer
         $this.IntraLapTime = 0
     }
 
+    # Starts the clock on the timer
     [void]Start()
     {
         $this.Stopwatch.Restart()
@@ -102,6 +103,7 @@ class ProgressTimer
         return $this.Lap(1)
     }
     
+    # Marks that [n] iterations have completed and adds the average time [n] times
     [int]Lap([int]$Count)
     {
         if ($Count -lt 0)
@@ -128,6 +130,18 @@ class ProgressTimer
         $this.IntraLapTime = 0
         $this.Stopwatch.Restart()
         return $this.Counter
+    }
+
+    # Combines Lapping and Writing Progress into one method
+    [int]LapAndWrite()
+    {
+        return $this.LapAndWrite(1)
+    }
+    [int]LapAndWrite([int]$Count)
+    {
+        $Ctr = $this.Lap($Count)
+        $this.WriteProgress()
+        return $Ctr
     }
 
 
