@@ -65,7 +65,7 @@ class ProgressTimer
     hidden [System.Diagnostics.Stopwatch]$Stopwatch
     hidden [int]$TotalCount
     hidden [int]$UseNMostRecent
-    hidden [bool]$IntraLapTime
+    hidden [double]$IntraLapTime
     [int]$Counter
     [string]$ActivityText
     [System.Nullable[int]]$Id
@@ -185,7 +185,7 @@ class ProgressTimer
         {
             return (-1)
         }
-        return $this.Counter / $this.TotalCount * 100
+        return [Math]::Min(100, $this.Counter / $this.TotalCount * 100)
     }
     
     # Gets the estimated time of completion based on the seconds remaining.
@@ -222,6 +222,7 @@ class ProgressTimer
         # Default Properties
         $SplatHt.Add("SecondsRemaining", $this.SecondsRemaining())
         $SplatHt.Add("PercentComplete", $this.PercentComplete())
+        $SplatHt.Add("Completed", $this.IsComplete())
         
         # Additional properties
         if (![string]::IsNullOrEmpty($this.ActivityText))
@@ -262,6 +263,11 @@ class ProgressTimer
         ).AppendFormat("ETC: {0}", $this.GetEtcString())
      
         return $sb.ToString()
+    }
+
+    hidden [bool]IsComplete()
+    {
+        return $this.Counter -ge $this.TotalCount
     }
 
 }
@@ -307,8 +313,7 @@ function New-ProgressTimer
     ForEach ($Server in $AllServers)
     {
         Test-Connection $Server.IpAddress
-        $Timer.Lap()
-        $Timer.WriteProgress()
+        $Timer.LapAndWrite()
     }
 
     # This example shows the ProgressTimer running in full auto mode. The StatusScript property shows how you can use the loop variable
