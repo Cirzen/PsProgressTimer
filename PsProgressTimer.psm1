@@ -124,8 +124,8 @@ class ProgressTimer
         for ($i = 0; $i++ -lt $Count; )
         {
             $this.Buffer.Add(($this.Stopwatch.Elapsed.TotalSeconds + $this.IntraLapTime) / $Count)
-            $this.Counter++
         }
+        $this.Counter += $Count
         $this.BufferAverage = [Linq.Enumerable]::Average($this.Buffer.Queue)
         $this.IntraLapTime = 0
         $this.Stopwatch.Restart()
