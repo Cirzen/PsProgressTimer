@@ -24,3 +24,15 @@ Foreach ($ip in $IPAddresses)
 Gets you this output:
 
 ![alt-text](Images\ProgressTimerDemo.gif "Screen capture of rich progress bar")
+
+## Neat. What else can it do?
+
+In your code, not every loop may necessarily have a completed action. But you still want the progress bar to update to reflect that work is ongoing, right? Use `$Timer.UpdateDuration()` instead of `.Lap()` and the next call of `.WriteProgress()` will have updated timing information without incrementing the percent complete bar.
+
+## But my code monitors a background process and multiple or no jobs might complete in each loop.
+
+Gotcha covered there too. Simply call `.Lap($n)` where `$n` is the number of tasks completed. The timing information will update as if you'd called `Lap()` for each one as it actually completed. Zero is a perfectly valid value here as well, it acts as if you'd simply called `.UpdateDuration()` instead.
+
+## Cool. What else.
+
+Check the examples via `Get-Help New-PsProgressTimer -Examples` for more ideas!
