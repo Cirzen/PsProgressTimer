@@ -23,7 +23,7 @@ Foreach ($ip in $IPAddresses)
 
 Gets you this output:
 
-![alt-text](Images\ProgressTimerDemo.gif "Screen capture of rich progress bar")
+![alt-text](Images/ProgressTimerDemo.gif "Screen capture of rich progress bar")
 
 ## Neat. What else can it do?
 
