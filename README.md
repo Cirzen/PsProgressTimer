@@ -9,7 +9,9 @@ What if it was always simple?
 ## Huh? Show me
 
 Sure. Well this code:
-```$IPAddresses = Get-Content MyServerAddresses.txt
+
+```powershell
+$IPAddresses = Get-Content MyServerAddresses.txt
 $Timer = New-ProgressTimer -TotalCount $IPAddresses.Count -ActivityText "Pinging..." -StatusScript {$ip} -Start
 Foreach ($ip in $IPAddresses)
 {
@@ -17,5 +19,7 @@ Foreach ($ip in $IPAddresses)
     Test-Connection $ip -Count 4
     [void]$Timer.Lap()
 }
-`
+```
+
 Gets you this output:
+![alt-text](Images\ProgressTimerDemo.gif "Screen capture of rich progress bar")
