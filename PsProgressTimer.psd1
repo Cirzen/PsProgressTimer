@@ -12,7 +12,7 @@
 RootModule = '.\PsProgressTimer.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.0.0'
+ModuleVersion = '1.0.0.1'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -69,7 +69,7 @@ PowerShellVersion = '5.1'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = '*'
+FunctionsToExport = 'New-PsProgressTimer'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -87,7 +87,7 @@ AliasesToExport = '*'
 # ModuleList = @()
 
 # List of all files packaged with this module
-# FileList = @()
+FileList = @(".\PsProgressTimer.png", ".\PsProgressTimer.psd1", ".\PsProgressTimer.psm1", ".\PsProgressTimer.Tests.Ps1", ".\LICENSE", ".\README.md", ".\Public\NewProgressTimer.ps1", ".\Images\ProgressTimerDemo.gif")
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
@@ -95,7 +95,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        # Tags = @()
+        Tags = @("Progress". "Write-Progress")
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/Cirzen/PsProgressTimer/blob/master/LICENSE'
