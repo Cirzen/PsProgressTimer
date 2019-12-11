@@ -266,7 +266,7 @@ ForEach ($Path in (Get-ChildItem -Path ([Io.Path]::Combine($PsScriptRoot, "Publi
     . $Path.FullName
 }
 
-ForEach ($Path in (Get-ChildItem -Path  ([Io.Path]::Combine($PsScriptRoot, "Private"))))
+ForEach ($Path in (Get-ChildItem -Path ([Io.Path]::Combine($PsScriptRoot, "Private"))))
 {
     . $Path.FullName
 }
