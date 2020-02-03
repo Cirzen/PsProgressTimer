@@ -87,7 +87,7 @@ AliasesToExport = '*'
 # ModuleList = @()
 
 # List of all files packaged with this module
-FileList = @(".\PsProgressTimer.png", ".\PsProgressTimer.psd1", ".\PsProgressTimer.psm1", ".\PsProgressTimer.Tests.Ps1", ".\LICENSE", ".\README.md", ".\Public\NewProgressTimer.ps1", ".\Images\ProgressTimerDemo.gif")
+FileList = @(".\PsProgressTimer.psd1", ".\PsProgressTimer.psm1", ".\Public\NewProgressTimer.ps1")
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
@@ -95,7 +95,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @("Progress". "Write-Progress")
+        Tags = @("Progress", "Write-Progress")
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/Cirzen/PsProgressTimer/blob/master/LICENSE'
