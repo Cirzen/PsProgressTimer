@@ -261,14 +261,15 @@ class ProgressTimer
 
 $ModuleDir = ([System.IO.FileInfo]$PsScriptRoot).Directory.FullName
 
-ForEach ($Path in (Get-ChildItem -Path ([Io.Path]::Combine($PsScriptRoot, "Public"))))
+$PublicPath = ([Io.Path]::Combine($PsScriptRoot, "Public"))
+$PrivatePath = ([Io.Path]::Combine($PsScriptRoot, "Private"))
+
+ForEach ($Path in (Get-ChildItem -Filter "*.ps1" -Path $PublicPath ))
 {
     . $Path.FullName
 }
 
-ForEach ($Path in (Get-ChildItem -Path ([Io.Path]::Combine($PsScriptRoot, "Private"))))
+ForEach ($Path in (Get-ChildItem -Filter "*.ps1"  -Path $PrivatePath ))
 {
     . $Path.FullName
 }
-
-Export-ModuleMember -Function @("New-ProgressTimer")
