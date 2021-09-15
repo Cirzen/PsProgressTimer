@@ -7,6 +7,10 @@ class CircularBuffer
 
     CircularBuffer([int]$Size)
     {
+        if ($Size -lt 1)
+        {
+            throw [System.ArgumentException]::new("Size must be greater than 0")
+        }
         $this.Queue = [Queue[double]]::new($Size)
         $this.Size = $Size
     }
@@ -24,6 +28,7 @@ class CircularBuffer
         }
         $this.Queue.Enqueue($Value)
     }
+
     [double]Read()
     {
         return $this.Queue.Dequeue()
@@ -185,13 +190,13 @@ class ProgressTimer
         return [datetime]::Now.AddSeconds($this.SecondsRemaining())
     }
 
-    # Gets the estimated time of compeletion as a string
+    # Gets the estimated time of completion as a string
     [string]GetEtcString()
     {
         return $this.GetEtcString($null, "--:--:--")
     }
 
-    # Gets the estimated time of compeletion as a string using the specified format and default string if the ETC is not defined
+    # Gets the estimated time of completion as a string using the specified format and default string if the ETC is not defined
     [string]GetEtcString([string]$Format, [string]$DefaultValue)
     {
         $EndDate = $this.EstimatedTimeOfCompletion()
@@ -227,7 +232,7 @@ class ProgressTimer
             $SplatHt.Add("ParentId", $this.ParentId.GetValueOrDefault())
         }
 
-        if ($this.Status -ne $null)
+        if ($null -ne $this.Status)
         {
             $SplatHt.Add("Status", "($($this.Counter)/$($this.TotalCount)) " + $this.Status.GetNewClosure().InvokeReturnAsIs())
         }
@@ -256,7 +261,6 @@ class ProgressTimer
     {
         return $this.Counter -ge $this.TotalCount
     }
-
 }
 
 $ModuleDir = ([System.IO.FileInfo]$PsScriptRoot).Directory.FullName
